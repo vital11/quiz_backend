@@ -83,3 +83,7 @@ SERVER_HOST = config('SERVER_HOST', default='localhost')
 SERVER_PORT = config('SERVER_PORT', cast=int)
 
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
+
+SECRET_KEY = config('SECRET_KEY')
+ALGORITHM = config('ALGORITHM')
+ACCESS_TOKEN_EXPIRE_MINUTES = config('ACCESS_TOKEN_EXPIRE_MINUTES', cast=int)
