@@ -1,12 +1,13 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.auth.models import Token, TokenPayload
 from app.auth.repository import AuthRepository
-from app.core.security import encode_access_token
 from app.core.dependencies import CurrentUser
+from app.core.security import encode_access_token
+from app.core.security_auth0 import VerifyTokenDep
 from app.users.models import UserPublic
 
 
@@ -40,3 +41,9 @@ async def login_access_token(
 async def reed_me(current_user: CurrentUser) -> UserPublic:
     """Test access token"""
     return current_user
+
+
+@router.get("/test-auth0-token", status_code=status.HTTP_200_OK)
+async def reed_auth0_token_payload(auth_result: VerifyTokenDep) -> Any:
+    """A valid Auth0 access token is required to access this route"""
+    return auth_result
