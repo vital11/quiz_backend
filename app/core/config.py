@@ -1,10 +1,13 @@
 from functools import lru_cache
-
 from typing import Any, Annotated
+from pathlib import Path
 
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import computed_field, AnyUrl, BeforeValidator
+
+
+BASE_DIR = Path(__file__).parent.parent.parent
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -15,16 +18,20 @@ def parse_cors(v: Any) -> list[str] | str:
     raise ValueError(v)
 
 
-class Settings(BaseSettings):
+class Config(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file="../../.env",
+        env_file=BASE_DIR / ".env",
         env_ignore_empty=True,
         extra="ignore",
     )
 
-    APP_NAME: str = "Quiz AI"
 
-    #TODO - env_file don't work correctly -> ValidationError without default values
+class RunSettings(Config):
+    SERVER_HOST: str = "0.0.0.0"
+    SERVER_PORT: int = 8000
+
+
+class DatabaseSettings(Config):
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
@@ -43,21 +50,62 @@ class Settings(BaseSettings):
             path=self.POSTGRES_DB,
         )
 
+    ECHO: bool = True
+    ECHO_POOL: bool = False
+    POOL_SIZE: int = 50
+    MAX_OVERFLOW: int = 10
+
+    NAMING_CONVENTION: dict[str, str] = {
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_N_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s",
+    }
+
+
+class AuthJWTSettings(Config):
+    PRIVATE_KEY_PATH: Path = BASE_DIR / "certs" / "jwt-private.pem"
+    PUBLIC_KEY_PATH: Path = BASE_DIR / "certs" / "jwt-public.pem"
+    ALGORITHM: str = ""
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
+
+
+class Auth0JWTSettings(Config):
+    DOMAIN: str = ""
+    API_AUDIENCE: str = ""
+    ALGORITHMS: str = ""
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ISSUER(self) -> str:
+        return str("https://" + self.DOMAIN + "/")
+
+
+class CrossOriginSettings(Config):
     FRONTEND_HOST: str = "http://127.0.0.1:3000"
+
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)
     ] = []
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def CORS_ALLOWED_ORIGINS(self) -> list[str]:
+    def ALLOWED_ORIGINS(self) -> list[str]:
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
 
-    SECRET_KEY: str = ""
-    ALGORITHM: str = ""
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
+
+class Settings(Config):
+    APP_NAME: str = "Quiz AI"
+
+    run: RunSettings = RunSettings()
+    db: DatabaseSettings = DatabaseSettings()
+    jwt: AuthJWTSettings = AuthJWTSettings()
+    auth0: Auth0JWTSettings = Auth0JWTSettings()
+    cors: CrossOriginSettings = CrossOriginSettings()
+
 
 @lru_cache
 def get_settings():
@@ -65,25 +113,3 @@ def get_settings():
 
 
 settings = get_settings()
-
-
-from decouple import config, Csv
-
-POSTGRES_USER = config('POSTGRES_USER')
-POSTGRES_PASSWORD = config('POSTGRES_PASSWORD')
-POSTGRES_DB = config('POSTGRES_DB')
-POSTGRES_HOST = config('POSTGRES_HOST', default='localhost')
-POSTGRES_PORT = config('POSTGRES_PORT', cast=int, default=5432)
-
-SQLALCHEMY_DATABASE_URI = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"\
-                          f"{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-
-SERVER_URL = config('SERVER_URL')
-SERVER_HOST = config('SERVER_HOST', default='localhost')
-SERVER_PORT = config('SERVER_PORT', cast=int)
-
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
-
-SECRET_KEY = config('SECRET_KEY')
-ALGORITHM = config('ALGORITHM')
-ACCESS_TOKEN_EXPIRE_MINUTES = config('ACCESS_TOKEN_EXPIRE_MINUTES', cast=int)
