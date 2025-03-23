@@ -4,13 +4,11 @@ from fastapi import APIRouter, status, HTTPException
 from pydantic import EmailStr
 
 from app.core.database import SessionDep
+from app.core.dependencies import CurrentUser
 from app.users.models import UserCreate, UserPublic, UserRegister
 from app.users.repository import UserRepository
 
-router = APIRouter(
-    prefix="/users",
-    tags=["Users"],
-)
+router = APIRouter(tags=["Users"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -28,7 +26,7 @@ async def read_users() -> list[UserPublic]:
 @router.get("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)
 async def read_user(user_id: uuid.UUID) -> UserPublic:
     """Get a specific user by id."""
-    return await UserRepository.find_by_id(model_id=user_id)
+    return await UserRepository.find_by_id(obj_id=user_id)
 
 
 @router.get("/email/{user_email}", response_model=UserPublic, status_code=status.HTTP_200_OK)
@@ -58,3 +56,8 @@ async def register_user(user_in: UserRegister) -> UserPublic:
         )
     user_create = UserCreate.model_validate(user_in)
     return await UserRepository.create(user_create=user_create)
+
+
+@router.get("/me", response_model=UserPublic, status_code=status.HTTP_200_OK)
+async def read_me(current_user: CurrentUser) -> UserPublic:
+    return current_user
