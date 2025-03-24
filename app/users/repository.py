@@ -1,8 +1,8 @@
 from loguru import logger
-from sqlalchemy.exc import IntegrityError
 
 from app.core.database import async_session
 from app.core.repository import BaseRepository
+from app.core.security import hash_password
 from app.users.models import UserCreate, UserPublic, User
 
 
@@ -10,21 +10,16 @@ class UserRepository(BaseRepository):
     model = User
 
     @classmethod
-    async def create(cls, payload: UserCreate) -> UserPublic | None:
+    async def create(cls, *, user_create: UserCreate) -> UserPublic:
         async with async_session() as session:
-            new_user = User(
-                email=payload.email,
-                full_name=payload.full_name,
-                hashed_password="hashed_password",
+            db_obj = User.model_validate(
+                user_create,
+                update={"hashed_password": hash_password(user_create.password)}
             )
-            try:
-                session.add(new_user)
-                await session.commit()
-                session.refresh(new_user)
+            session.add(db_obj)
+            await session.commit()
+            await session.refresh(db_obj)
 
-                logger.info(f'Account {new_user.email} created successfully')
-                return UserPublic(**new_user.model_dump())
-
-            except IntegrityError as e:
-                logger.info(f'Account {new_user.email} already exist')
-
+            new_user = UserPublic(**db_obj.model_dump())
+            logger.info(f'Account {new_user.email} Registration Success')
+            return new_user
