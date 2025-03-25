@@ -18,8 +18,14 @@ if settings.cors.ALLOWED_ORIGINS:
     )
 
 
-logger.add("./app/core/info.json", format="{time} {level} {message}", level="INFO",
-           rotation="1 MB", compression="zip", serialize=True)
+logger.add(
+    "./app/core/info.json",
+    format="{time} {level} {message}",
+    level="INFO",
+    rotation="1 MB",
+    compression="zip",
+    serialize=True,
+)
 
 
 app.include_router(router=api_router)
@@ -27,9 +33,10 @@ app.include_router(router=api_router)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
         host=settings.run.SERVER_HOST,
         port=settings.run.SERVER_PORT,
-        reload=True
+        reload=True,
     )

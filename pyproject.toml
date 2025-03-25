@@ -11,8 +11,14 @@ dependencies = [
     "loguru>=0.7.3",
     "passlib>=1.7.4",
     "pydantic-settings>=2.8.1",
+    "pydantic[email]>=2.10.6",
     "pyjwt[crypto]>=2.10.1",
     "sqlalchemy>=2.0.39",
     "sqlmodel>=0.0.24",
     "uvicorn[standard]>=0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
 ]
