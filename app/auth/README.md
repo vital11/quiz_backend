@@ -1,3 +1,10 @@
+# install PyJWT with pip
+
+```shell
+# Install the cryptography library for encoding or decoding tokens using RSA
+pip install pyjwt[crypto]
+```
+
 # Issue RSA private key + public key pair
 
 ```shell
