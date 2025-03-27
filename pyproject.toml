@@ -14,7 +14,6 @@ dependencies = [
     "pydantic[email]>=2.10.6",
     "pyjwt[crypto]>=2.10.1",
     "sqlalchemy>=2.0.39",
-    "sqlmodel>=0.0.24",
     "uvicorn==0.21.1",
 ]
 
