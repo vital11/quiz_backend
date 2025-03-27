@@ -12,9 +12,15 @@ class User(Base):
         server_default=func.gen_random_uuid(),
     )
     email: Mapped[str] = mapped_column(
-        String(50), unique=True, index=True, nullable=False
+        String(50),
+        unique=True,
+        index=True,
     )
-    full_name: Mapped[str] = mapped_column(String(50), default=None)
-    hashed_password: Mapped[bytes] = mapped_column(nullable=False)
+    full_name: Mapped[str | None] = mapped_column(
+        String(50),
+        default=None,
+        server_default=None,
+    )
+    hashed_password: Mapped[bytes]
     is_active: Mapped[bool] = True
     is_superuser: Mapped[bool] = False
