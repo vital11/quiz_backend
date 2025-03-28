@@ -21,6 +21,14 @@ class User(Base):
         default=None,
         server_default=None,
     )
-    hashed_password: Mapped[bytes]
+    hashed_password: Mapped[bytes] = mapped_column(
+        deferred=True,
+    )
     is_active: Mapped[bool] = True
     is_superuser: Mapped[bool] = False
+
+    def __str__(self):
+        return f"{self.__class__.__name__}(id={self.id}, email={self.email!r})"
+
+    def __repr__(self):
+        return str(self)
