@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.core.database import SessionDep
-from app.core.dependencies import CurrentUser, UserDep
+from app.core.dependencies import CurrentUser, UserByIdDep
 from app.users import crud
 from app.users.schemas import (
     UserCreate,
@@ -40,7 +40,7 @@ async def register_user(
 
 @router.get("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)
 async def read_user(
-    user: UserDep,
+    user: UserByIdDep,
 ) -> UserPublic:
     """Get a specific user by id"""
     return user
@@ -48,35 +48,38 @@ async def read_user(
 
 @router.put("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)
 async def update_user(
-    obj_update: UserUpdate,
+    user_update: UserUpdate,
     session: SessionDep,
-    user: UserDep,
+    user: UserByIdDep,
 ) -> UserPublic:
     """Update a specific user by id"""
-    return await crud.update(session=session, obj=user, obj_update=obj_update)
+    return await crud.update(session=session, user=user, user_update=user_update)
 
 
 @router.patch("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)
 async def update_user_partial(
-    obj_update: UserUpdatePartial,
+    user_update: UserUpdatePartial,
     session: SessionDep,
-    user: UserDep,
+    user: UserByIdDep,
 ) -> UserPublic:
     """Update a specific user by id"""
     return await crud.update(
-        session=session, obj=user, obj_update=obj_update, partial=True
+        session=session, user=user, user_update=user_update, partial=True
     )
 
 
 @router.delete("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)
 async def delete_user(
     session: SessionDep,
-    user: UserDep,
+    user: UserByIdDep,
 ) -> UserPublic:
     """Delete a specific user by id and return deleted"""
-    return await crud.delete(session=session, obj=user)
+    return await crud.delete(session=session, user=user)
 
 
 @router.get("/me", response_model=UserPublic, status_code=status.HTTP_200_OK)
-async def read_me(current_user: CurrentUser) -> UserPublic:
+async def read_me(
+    current_user: CurrentUser,
+) -> UserPublic:
+    """Get current user"""
     return current_user
