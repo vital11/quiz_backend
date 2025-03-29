@@ -1,11 +1,10 @@
 from functools import lru_cache
-from typing import Any, Annotated
+from typing import Any, Annotated, Literal
 from pathlib import Path
 
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field, AnyUrl, BeforeValidator
-
+from pydantic import computed_field, AnyUrl, BeforeValidator, BaseModel
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
@@ -69,6 +68,7 @@ class AuthJWTSettings(Config):
     PUBLIC_KEY_PATH: Path = BASE_DIR / "certs" / "jwt-public.pem"
     ALGORITHM: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
 
 class Auth0JWTSettings(Config):
@@ -85,9 +85,9 @@ class Auth0JWTSettings(Config):
 class CrossOriginSettings(Config):
     FRONTEND_HOST: str = "http://127.0.0.1:3000"
 
-    BACKEND_CORS_ORIGINS: Annotated[
-        list[AnyUrl] | str, BeforeValidator(parse_cors)
-    ] = []
+    BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
+        []
+    )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -99,6 +99,7 @@ class CrossOriginSettings(Config):
 
 class Settings(Config):
     APP_NAME: str = "Quiz AI"
+    API_V1_PREFIX: str = "/api/v1"
 
     run: RunSettings = RunSettings()
     db: DatabaseSettings = DatabaseSettings()
@@ -109,7 +110,7 @@ class Settings(Config):
 
 @lru_cache
 def get_settings():
-    return Settings()   # type: ignore
+    return Settings()  # type: ignore
 
 
 settings = get_settings()
