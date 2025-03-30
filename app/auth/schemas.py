@@ -12,12 +12,12 @@ class Token(BaseModel):
 
 
 class TokenType(enum.Enum):
-    ACCESS = "access"
-    REFRESH = "refresh"
+    ACCESS: str = "access"
+    REFRESH: str = "refresh"
 
 
 class TokenPayload(BaseModel):
-    sub: uuid.UUID | EmailStr | str
+    sub: uuid.UUID | str
     email: EmailStr | str | None = None
     iat: datetime | None = None
     exp: datetime | None = None

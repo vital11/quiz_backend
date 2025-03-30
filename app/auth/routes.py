@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, HTTPBearer
 
 from app.auth import crud
-from app.core.security import create_access_token, create_refresh_token
+from app.auth.helpers import create_access_token, create_refresh_token
 from app.auth.schemas import Token
 
 from app.core.database import SessionDep
-from app.core.dependencies import CurrentUser
+from app.auth.dependencies import CurrentUser, CurrentUserForRefresh
 from app.core.security_auth0 import VerifyTokenDep
 from app.users.schemas import UserPublic
 
@@ -22,12 +22,12 @@ router = APIRouter(
 )
 
 
-@router.post("/access-token")
+@router.post("/access-token", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def login_access_token(
     session: SessionDep,
     user_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
-    """OAuth2 compatible token login, get an access token for future requests"""
+    """OAuth2 compatible token login by form data, get an access token for future requests"""
     user = await crud.authenticate(
         session=session,
         email=user_data.username,
@@ -45,6 +45,21 @@ async def login_access_token(
     return Token(
         access_token=create_access_token(user=user),
         refresh_token=create_refresh_token(user=user),
+    )
+
+
+@router.post(
+    "/refresh-token",
+    response_model=Token,
+    response_model_exclude_none=True,
+    status_code=status.HTTP_201_CREATED,
+)
+async def refresh_token(
+    current_user_for_refresh: CurrentUserForRefresh,
+) -> Token:
+    """OAuth2 compatible token login by refresh token, get an access token for future requests"""
+    return Token(
+        access_token=create_access_token(user=current_user_for_refresh),
     )
 
 

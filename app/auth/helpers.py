@@ -16,14 +16,7 @@ def hash_password(password: str) -> bytes:
     )
 
 
-def verify_password(password: str, hashed_password: bytes) -> bool:
-    return bcrypt.checkpw(
-        password=password.encode(),
-        hashed_password=hashed_password,
-    )
-
-
-def encode_jwt(
+def _encode_jwt(
     payload: TokenPayload,
     private_key: str = settings.jwt.PRIVATE_KEY_PATH.read_text(),
     algorithm: str = settings.jwt.ALGORITHM,
@@ -37,6 +30,7 @@ def encode_jwt(
         expire = now + timedelta(minutes=expire_minutes)
     payload.iat = now
     payload.exp = expire
+    payload.sub = str(payload.sub)
     return jwt.encode(
         payload=payload.model_dump(exclude_unset=True),
         key=private_key,
@@ -56,14 +50,14 @@ def decode_jwt(
     )
 
 
-def create_token(
+def _create_token(
     payload: TokenPayload,
     token_type: TokenType,
     expire_minutes: int = settings.jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
     expire_delta: timedelta | None = None,
 ) -> str:
     payload.type = token_type.value
-    return encode_jwt(
+    return _encode_jwt(
         payload=payload,
         expire_minutes=expire_minutes,
         expire_delta=expire_delta,
@@ -72,10 +66,10 @@ def create_token(
 
 def create_access_token(user: UserPublic) -> str:
     payload = TokenPayload(
-        sub=str(user.id),
+        sub=user.id,
         email=user.email,
     )
-    return create_token(
+    return _create_token(
         token_type=TokenType.ACCESS,
         payload=payload,
         expire_minutes=settings.jwt.ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -84,9 +78,9 @@ def create_access_token(user: UserPublic) -> str:
 
 def create_refresh_token(user: UserPublic) -> str:
     payload = TokenPayload(
-        sub=str(user.id),
+        sub=user.id,
     )
-    return create_token(
+    return _create_token(
         token_type=TokenType.REFRESH,
         payload=payload,
         expire_delta=timedelta(days=settings.jwt.REFRESH_TOKEN_EXPIRE_DAYS),
