@@ -18,6 +18,7 @@ class TokenType(enum.Enum):
 
 class TokenPayload(BaseModel):
     sub: uuid.UUID | str
+    jti: uuid.UUID | str | None = None
     email: EmailStr | str | None = None
     iat: datetime | None = None
     exp: datetime | None = None

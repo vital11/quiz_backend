@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -31,6 +32,7 @@ def _encode_jwt(
     payload.iat = now
     payload.exp = expire
     payload.sub = str(payload.sub)
+    payload.jti = str(uuid.uuid4())
     return jwt.encode(
         payload=payload.model_dump(exclude_unset=True),
         key=private_key,
