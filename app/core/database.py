@@ -1,6 +1,7 @@
 from typing import Annotated, AsyncGenerator
 
 from fastapi import Depends
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
 from app.core.config import settings
+from app.helpers.case_converter import camel_case_to_snake_case
 
 
 class Database:
@@ -60,8 +62,10 @@ SessionDep = Annotated[AsyncSession, Depends(db.session)]
 class Base(DeclarativeBase):
     __abstract__ = True
 
+    metadata = MetaData(naming_convention=settings.db.NAMING_CONVENTION)
+
     @declared_attr.directive
     def __tablename__(cls) -> str:
-        return f"{cls.__name__.lower()}s"
+        return f"{camel_case_to_snake_case(cls.__name__)}s"
 
     id: Mapped[int] = mapped_column(primary_key=True)
