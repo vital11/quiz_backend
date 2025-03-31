@@ -2,6 +2,7 @@ from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from starlette.middleware.cors import CORSMiddleware
 from loguru import logger
 
@@ -13,10 +14,11 @@ from app.core.database import db
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
-    db.dispose()
+    await db.dispose()
 
 
 app = FastAPI(
+    default_response_class=ORJSONResponse,
     lifespan=lifespan,
     title=settings.APP_NAME,
 )
@@ -42,7 +44,7 @@ logger.add(
 )
 
 
-app.include_router(router=api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(router=api_router, prefix=settings.api.PREFIX)
 
 
 if __name__ == "__main__":

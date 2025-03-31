@@ -10,6 +10,7 @@ dependencies = [
     "bcrypt>=4.3.0",
     "fastapi[standard]>=0.115.12",
     "loguru>=0.7.3",
+    "orjson>=3.10.16",
     "pydantic-settings>=2.8.1",
     "pydantic[email]>=2.10.6",
     "pyjwt[crypto]>=2.10.1",
