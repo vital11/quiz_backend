@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 
+from app.auth.dependencies import UserByIdDep, CurrentUser
 from app.core.database import SessionDep
-from app.core.dependencies import CurrentUser, UserByIdDep
 from app.users import crud
 from app.users.schemas import (
     UserCreate,
@@ -77,7 +77,7 @@ async def delete_user(
     return await crud.delete(session=session, user=user)
 
 
-@router.get("/me", response_model=UserPublic, status_code=status.HTTP_200_OK)
+@router.get("/me/", response_model=UserPublic, status_code=status.HTTP_200_OK)
 async def read_me(
     current_user: CurrentUser,
 ) -> UserPublic:

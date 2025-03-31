@@ -11,7 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import undefer
 
-from app.core.security import hash_password
+from app.auth.helpers import hash_password
 from app.users.models import User
 from app.users.schemas import (
     UserCreate,

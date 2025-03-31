@@ -14,7 +14,7 @@ from app.auth.helpers import decode_jwt
 
 
 reusable_oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_PREFIX}/login/access-token"
+    tokenUrl=f"{settings.api.PREFIX}{settings.api.v1.PREFIX}{settings.api.v1.LOGIN}/access-token"
 )
 
 
