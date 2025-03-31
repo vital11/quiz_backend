@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Annotated, Literal
+from typing import Any, Annotated
 from pathlib import Path
 
 from pydantic_core import MultiHostUrl
@@ -20,17 +20,34 @@ def parse_cors(v: Any) -> list[str] | str:
 class Config(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
+        case_sensitive=False,
+        env_nested_delimiter="__",
         env_ignore_empty=True,
         extra="ignore",
     )
 
 
-class RunSettings(Config):
+class Run(Config):
     SERVER_HOST: str = "0.0.0.0"
     SERVER_PORT: int = 8000
 
 
-class DatabaseSettings(Config):
+class ApiV1Prefix(BaseModel):
+    PREFIX: str = "/v1"
+    USERS: str = "/users"
+    LOGIN: str = "/login"
+
+
+class ApiPrefix(BaseModel):
+    PREFIX: str = "/api"
+    v1: ApiV1Prefix = ApiV1Prefix()
+
+
+class Logger(BaseModel):
+    pass
+
+
+class Database(Config):
     POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
@@ -51,7 +68,7 @@ class DatabaseSettings(Config):
 
     ECHO: bool = True
     ECHO_POOL: bool = False
-    POOL_SIZE: int = 50
+    POOL_SIZE: int = 5
     MAX_OVERFLOW: int = 10
 
     NAMING_CONVENTION: dict[str, str] = {
@@ -63,7 +80,7 @@ class DatabaseSettings(Config):
     }
 
 
-class AuthJWTSettings(Config):
+class AuthJWT(Config):
     PRIVATE_KEY_PATH: Path = BASE_DIR / "certs" / "jwt-private.pem"
     PUBLIC_KEY_PATH: Path = BASE_DIR / "certs" / "jwt-public.pem"
     ALGORITHM: str = ""
@@ -71,7 +88,7 @@ class AuthJWTSettings(Config):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
 
-class Auth0JWTSettings(Config):
+class Auth0JWT(Config):
     DOMAIN: str = ""
     API_AUDIENCE: str = ""
     ALGORITHMS: str = ""
@@ -82,8 +99,8 @@ class Auth0JWTSettings(Config):
         return str("https://" + self.DOMAIN + "/")
 
 
-class CrossOriginSettings(Config):
-    FRONTEND_HOST: str = "http://127.0.0.1:3000"
+class CrossOrigin(Config):
+    FRONTEND_HOST: str = ""
 
     BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
         []
@@ -99,13 +116,14 @@ class CrossOriginSettings(Config):
 
 class Settings(Config):
     APP_NAME: str = "Quiz AI"
-    API_V1_PREFIX: str = "/api/v1"
 
-    run: RunSettings = RunSettings()
-    db: DatabaseSettings = DatabaseSettings()
-    jwt: AuthJWTSettings = AuthJWTSettings()
-    auth0: Auth0JWTSettings = Auth0JWTSettings()
-    cors: CrossOriginSettings = CrossOriginSettings()
+    run: Run = Run()
+    api: ApiPrefix = ApiPrefix()
+    log: Logger = Logger()
+    db: Database = Database()
+    jwt: AuthJWT = AuthJWT()
+    auth0: Auth0JWT = Auth0JWT()
+    cors: CrossOrigin = CrossOrigin()
 
 
 @lru_cache
