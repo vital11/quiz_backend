@@ -34,14 +34,7 @@ if settings.cors.ALLOWED_ORIGINS:
     )
 
 
-logger.add(
-    "./app/core/info.json",
-    format="{time} {level} {message}",
-    level="INFO",
-    rotation="1 MB",
-    compression="zip",
-    serialize=True,
-)
+logger.add(**settings.log.RECORD_DICT)
 
 
 app.include_router(router=api_router, prefix=settings.api.PREFIX)

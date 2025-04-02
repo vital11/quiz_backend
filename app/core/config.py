@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Annotated
+from typing import Any, Annotated, Literal
 from pathlib import Path
 
 from pydantic_core import MultiHostUrl
@@ -44,7 +44,24 @@ class ApiPrefix(BaseModel):
 
 
 class Logger(BaseModel):
-    pass
+    PATH: Path = BASE_DIR / "app" / "core" / "log.json"
+    FORMAT: str = "{time} {level} {message}"
+    LEVEL: Literal["DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    ROTATION: str = "1 MB"
+    COMPRESSION: str = "zip"
+    SERIALIZE: bool = True
+
+    @computed_field
+    @property
+    def RECORD_DICT(self) -> dict:
+        return dict(
+            sink=self.PATH,
+            format=self.FORMAT,
+            level=self.LEVEL,
+            rotation=self.ROTATION,
+            compression=self.COMPRESSION,
+            serialize=self.SERIALIZE,
+        )
 
 
 class Database(Config):
@@ -126,9 +143,4 @@ class Settings(Config):
     cors: CrossOrigin = CrossOrigin()
 
 
-@lru_cache
-def get_settings():
-    return Settings()  # type: ignore
-
-
-settings = get_settings()
+settings = Settings()
