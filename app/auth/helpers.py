@@ -7,6 +7,7 @@ import bcrypt
 
 from app.auth.schemas import TokenPayload, TokenType
 from app.core.config import settings
+from app.users.models import User
 from app.users.schemas import UserPublic
 
 
@@ -86,4 +87,15 @@ def create_refresh_token(user: UserPublic) -> str:
         token_type=TokenType.REFRESH,
         payload=payload,
         expire_delta=timedelta(days=settings.jwt.REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+
+
+def create_password_reset_token(user: User) -> str:
+    payload = TokenPayload(
+        sub=user.id,
+    )
+    return _create_token(
+        token_type=TokenType.RESET,
+        payload=payload,
+        expire_delta=timedelta(hours=settings.jwt.RESET_PASSWORD_TOKEN_EXPIRE_HOURS),
     )

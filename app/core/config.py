@@ -107,6 +107,7 @@ class AuthJWT(Config):
     ALGORITHM: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    RESET_PASSWORD_TOKEN_EXPIRE_HOURS: int = 1
 
 
 class Auth0JWT(Config):
