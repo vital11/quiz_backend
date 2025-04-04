@@ -4,8 +4,12 @@ from typing import Annotated
 from fastapi import Depends, Path, HTTPException, status
 
 from app.auth.crud import authenticate_by_token_sub
-from app.auth.schemas import TokenPayload, TokenType
-from app.auth.validation import validate_token, validate_token_type
+from app.auth.schemas import TokenType
+from app.auth.validation import (
+    validate_token,
+    validate_token_type,
+    reusable_oauth2_scheme,
+)
 from app.core.database import SessionDep
 from app.users.models import User
 from app.users import crud
@@ -20,8 +24,9 @@ class AuthenticateByTokenOfType:
     async def __call__(
         self,
         session: SessionDep,
-        payload: Annotated[TokenPayload, Depends(validate_token)],
+        token: Annotated[str, Depends(reusable_oauth2_scheme)],
     ):
+        payload = validate_token(token=token)
         validate_token_type(
             payload=payload,
             token_type=self.token_type,

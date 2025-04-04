@@ -1,10 +1,9 @@
-from functools import lru_cache
 from typing import Any, Annotated, Literal
 from pathlib import Path
 
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field, AnyUrl, BeforeValidator, BaseModel
+from pydantic import computed_field, AnyUrl, BeforeValidator, BaseModel, EmailStr
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
@@ -41,6 +40,11 @@ class ApiV1Prefix(BaseModel):
 class ApiPrefix(BaseModel):
     PREFIX: str = "/api"
     v1: ApiV1Prefix = ApiV1Prefix()
+
+    @computed_field
+    @property
+    def BEARER_TOKEN_URL(self) -> str:
+        return str(self.PREFIX + self.v1.PREFIX + self.v1.LOGIN + "/access-token")
 
 
 class Logger(BaseModel):
