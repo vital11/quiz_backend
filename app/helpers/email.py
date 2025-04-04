@@ -9,6 +9,12 @@ from loguru import logger
 from app.core.config import settings, BASE_DIR
 
 
+@dataclass
+class EmailData:
+    html_content: str
+    subject: str
+
+
 def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
     template = (
         BASE_DIR / "app" / "email-templates" / "build" / template_name
@@ -39,3 +45,22 @@ def send_email(
 
     response = message.send(to=email_to, smtp=smtp_options)
     logger.info(f"Send email result: {response}")
+
+
+def generate_reset_password_email(email_to: str, email: str, token: str) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Password recovery for user {email!r}"
+    link = (
+        f"{settings.FRONTEND_HOST}{settings.api.v1.LOGIN}/reset-password?token={token}"
+    )
+    html_content = render_email_template(
+        template_name="reset_password.html",
+        context=dict(
+            project_name=project_name,
+            username=email,
+            email=email_to,
+            valid_hours=settings.jwt.RESET_PASSWORD_TOKEN_EXPIRE_HOURS,
+            link=link,
+        ),
+    )
+    return EmailData(html_content=html_content, subject=subject)

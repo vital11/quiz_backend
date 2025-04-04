@@ -2,16 +2,28 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, HTTPBearer
+from fastapi.responses import HTMLResponse
 
 from app.auth import crud
-from app.auth.helpers import create_access_token, create_refresh_token
-from app.auth.schemas import Token
+from app.auth.crud import authenticate_by_token_sub
+from app.auth.helpers import (
+    create_access_token,
+    create_refresh_token,
+    create_password_reset_token,
+    hash_password,
+)
+from app.auth.schemas import Token, Message, TokenPayload, NewPassword
+from app.auth.validation import validate_token
 
 from app.core.database import SessionDep
-from app.auth.dependencies import CurrentUser, CurrentUserForRefresh
+from app.auth.dependencies import (
+    CurrentUser,
+    CurrentUserForRefresh,
+)
 from app.core.security_auth0 import VerifyTokenDep
+from app.helpers.email import generate_reset_password_email, send_email
+from app.users.crud import get_user_by_email
 from app.users.schemas import UserPublic
-
 
 http_bearer = HTTPBearer(auto_error=False)
 
@@ -77,3 +89,63 @@ async def reed_auth0_token_payload(
 ) -> Any:
     """A valid Auth0 access token is required to access this route"""
     return auth_result
+
+
+@router.post("/recover-password/{email}")
+async def recover_password(email: str, session: SessionDep) -> Message:
+    """Password Recovery"""
+    user = await get_user_by_email(session=session, email=email)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The user with this email does not exist in the system.",
+        )
+    password_reset_token = create_password_reset_token(user=user)
+
+    email_data = generate_reset_password_email(
+        email_to=user.email, email=email, token=password_reset_token
+    )
+    send_email(
+        email_to=user.email,
+        subject=email_data.subject,
+        html_content=email_data.html_content,
+    )
+    return Message(message="Password recovery email sent")
+
+
+@router.post("/reset-password/")
+async def reset_password(
+    session: SessionDep,
+    body: NewPassword,
+) -> Message:
+    """Reset password"""
+    payload = validate_token(token=body.token)
+    user = await authenticate_by_token_sub(
+        session=session,
+        payload=TokenPayload.model_validate(payload),
+    )
+    user.hashed_password = hash_password(password=body.new_password)
+    session.add(user)
+    await session.commit()
+    return Message(message="Password updated successfully")
+
+
+@router.post(
+    "/password-recovery-html-content/{email}",
+    response_class=HTMLResponse,
+)
+async def recover_password_html_content(email: str, session: SessionDep) -> Any:
+    """HTML Content for Password Recovery"""
+    user = await get_user_by_email(session=session, email=email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this username does not exist in the system.",
+        )
+    password_reset_token = create_password_reset_token(user=user)
+    email_data = generate_reset_password_email(
+        email_to=user.email, email=email, token=password_reset_token
+    )
+    return HTMLResponse(
+        content=email_data.html_content, headers={"subject:": email_data.subject}
+    )
