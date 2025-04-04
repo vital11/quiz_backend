@@ -3,7 +3,15 @@ from pathlib import Path
 
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import computed_field, AnyUrl, BeforeValidator, BaseModel, EmailStr
+from pydantic import (
+    computed_field,
+    AnyUrl,
+    BeforeValidator,
+    BaseModel,
+    EmailStr,
+    model_validator,
+)
+from typing_extensions import Self
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
@@ -24,6 +32,9 @@ class Config(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",
     )
+
+    PROJECT_NAME: str = "Quiz"
+    FRONTEND_HOST: str = ""
 
 
 class Run(Config):
@@ -107,7 +118,7 @@ class AuthJWT(Config):
     ALGORITHM: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 3000
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    RESET_PASSWORD_TOKEN_EXPIRE_HOURS: int = 1
+    RESET_PASSWORD_TOKEN_EXPIRE_HOURS: int = 24
 
 
 class Auth0JWT(Config):
@@ -122,8 +133,6 @@ class Auth0JWT(Config):
 
 
 class CrossOrigin(Config):
-    FRONTEND_HOST: str = ""
-
     BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = (
         []
     )
@@ -136,8 +145,29 @@ class CrossOrigin(Config):
         ]
 
 
+class SMTP(Config):
+    TLS: bool = True
+    SSL: bool = False
+    PORT: int = 587
+    HOST: str | None = None
+    USER: str | EmailStr | None = None
+    PASSWORD: str | None = None
+    EMAILS_FROM_EMAIL: EmailStr | None = None
+    EMAILS_FROM_NAME: str | EmailStr | None = None
+
+    @model_validator(mode="after")
+    def _set_default_emails_from(self) -> Self:
+        if not self.EMAILS_FROM_NAME:
+            self.EMAILS_FROM_NAME = self.PROJECT_NAME
+        return self
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def emails_enabled(self) -> bool:
+        return bool(self.HOST and self.EMAILS_FROM_EMAIL)
+
+
 class Settings(Config):
-    APP_NAME: str = "Quiz AI"
 
     run: Run = Run()
     api: ApiPrefix = ApiPrefix()
@@ -146,6 +176,7 @@ class Settings(Config):
     jwt: AuthJWT = AuthJWT()
     auth0: Auth0JWT = Auth0JWT()
     cors: CrossOrigin = CrossOrigin()
+    smtp: SMTP = SMTP()
 
 
 settings = Settings()

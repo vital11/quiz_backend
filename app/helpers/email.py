@@ -1,8 +1,12 @@
+from dataclasses import dataclass
 from typing import Any
 
-from jinja2 import Template
+import emails
 
-from app.core.config import BASE_DIR
+from jinja2 import Template
+from loguru import logger
+
+from app.core.config import settings, BASE_DIR
 
 
 def render_email_template(*, template_name: str, context: dict[str, Any]) -> str:
@@ -10,3 +14,28 @@ def render_email_template(*, template_name: str, context: dict[str, Any]) -> str
         BASE_DIR / "app" / "email-templates" / "build" / template_name
     ).read_text()
     return Template(source=template).render(context)
+
+
+def send_email(
+    email_to: str,
+    subject: str = "",
+    html_content: str = "",
+) -> None:
+    assert settings.smtp.emails_enabled, "no provided configuration for email variables"
+    message = emails.Message(
+        subject=subject,
+        html=html_content,
+        mail_from=(settings.smtp.EMAILS_FROM_NAME, settings.smtp.EMAILS_FROM_EMAIL),
+    )
+    smtp_options = {"host": settings.smtp.HOST, "port": settings.smtp.PORT}
+    if settings.smtp.TLS:
+        smtp_options["tls"] = True
+    elif settings.smtp.SSL:
+        smtp_options["ssl"] = True
+    if settings.smtp.USER:
+        smtp_options["user"] = settings.smtp.USER
+    if settings.smtp.PASSWORD:
+        smtp_options["password"] = settings.smtp.PASSWORD
+
+    response = message.send(to=email_to, smtp=smtp_options)
+    logger.info(f"Send email result: {response}")
