@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 
 from app.auth.dependencies import UserByIdDep, CurrentUser
+from app.core.config import settings
 from app.core.database import SessionDep
+from app.helpers.emails import generate_new_account_email, send_email
 from app.users import crud
 from app.users.schemas import (
     UserCreate,
@@ -35,7 +37,17 @@ async def register_user(
             detail=f"The user {user.email} already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
-    return await crud.create(session=session, user_in=user_create)
+    user = await crud.create(session=session, user_in=user_create)
+    if settings.smtp.emails_enabled and user_in.email:
+        email_data = generate_new_account_email(
+            email_to=user_in.email, username=user_in.email, password=user_in.password
+        )
+        send_email(
+            email_to=user_in.email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+    return user
 
 
 @router.get("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)
