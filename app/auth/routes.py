@@ -21,7 +21,7 @@ from app.auth.dependencies import (
     CurrentUserForRefresh,
 )
 from app.core.security_auth0 import VerifyTokenDep
-from app.helpers.email import generate_reset_password_email, send_email
+from app.helpers.emails import generate_reset_password_email, send_email
 from app.users.crud import get_user_by_email
 from app.users.schemas import UserPublic
 

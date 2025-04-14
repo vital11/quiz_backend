@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     default_response_class=ORJSONResponse,
     lifespan=lifespan,
-    title=settings.APP_NAME,
+    title=settings.PROJECT_NAME,
 )
 
 
