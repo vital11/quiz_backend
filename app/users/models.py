@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import func, String
+from sqlalchemy import func, String, Boolean, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -24,8 +24,16 @@ class User(Base):
     hashed_password: Mapped[bytes] = mapped_column(
         deferred=True,
     )
-    is_active: Mapped[bool] = True
-    is_superuser: Mapped[bool] = False
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        server_default=text("true"),
+    )
+    is_superuser: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        server_default=text("false"),
+    )
 
     def __str__(self):
         return f"{self.__class__.__name__}(id={self.id}, email={self.email!r})"
