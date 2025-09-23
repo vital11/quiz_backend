@@ -56,7 +56,12 @@ db = Database(
 )
 
 
-SessionDep = Annotated[AsyncSession, Depends(db.session)]
+def db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Wrapper to simplify overrides so make this more test-friendly"""
+    return db.session()
+
+
+SessionDep = Annotated[AsyncSession, Depends(db_session)]
 
 
 class Base(DeclarativeBase):

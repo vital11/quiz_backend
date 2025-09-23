@@ -11,7 +11,7 @@ class UserBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     email: Annotated[EmailStr, MaxLen(50)]
-    full_name: Annotated[str | None, MaxLen(50)]
+    full_name: Annotated[str | None, MaxLen(50)] = None
     is_active: bool = True
     is_superuser: bool = False
 
@@ -25,7 +25,7 @@ class UserCreate(UserBase):
 class UserRegister(BaseModel):
     email: Annotated[EmailStr, MaxLen(50)]
     password: Annotated[str, MinLen(2), MaxLen(50)]
-    full_name: Annotated[str | None, MaxLen(50)]
+    full_name: Annotated[str | None, MaxLen(50)] = None
 
 
 class UserUpdate(UserBase):

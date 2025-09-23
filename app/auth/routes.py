@@ -93,7 +93,7 @@ async def reed_auth0_token_payload(
 
 @router.post("/recover-password/{email}")
 async def recover_password(email: str, session: SessionDep) -> Message:
-    """Password Recovery"""
+    """Password Recovery - The user asks for a token to reset password"""
     user = await get_user_by_email(session=session, email=email)
     if not user:
         raise HTTPException(
@@ -118,7 +118,7 @@ async def reset_password(
     session: SessionDep,
     body: NewPassword,
 ) -> Message:
-    """Reset password"""
+    """Reset password - The user changes password given the token"""
     payload = validate_token(token=body.token)
     user = await authenticate_by_token_sub(
         session=session,

@@ -23,21 +23,24 @@ class UnauthenticatedException(HTTPException):
 
 class VerifyToken:
     """Does all the token verification using PyJWT"""
+
     def __init__(self):
         self.config = settings
 
         # This gets the JWKS from a given URL and does processing so you can
         # use any of the keys available
-        jwks_url = f'https://{self.config.auth0.DOMAIN}/.well-known/jwks.json'
+        jwks_url = f"https://{self.config.auth0.DOMAIN}/.well-known/jwks.json"
         self.jwks_client = jwt.PyJWKClient(jwks_url)
 
     async def verify(
-            self,
-            security_scopes: SecurityScopes,
-            token: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer())
+        self,
+        security_scopes: SecurityScopes,
+        token: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer()),
     ):
         """
+        Taken from
         https://auth0.com/blog/build-and-secure-fastapi-server-with-auth0/
+
         The verify method consists of three steps to validate the integrity of the token:
         1. It grabs the token from the Authorization header.
         2. This method uses the key ID (kid claim present in the token header) to grab
@@ -74,6 +77,6 @@ class VerifyToken:
         return payload
 
 
-auth0_token = VerifyToken()
+payload_getter = VerifyToken()
 
-VerifyTokenDep = Annotated[str, Security(auth0_token.verify)]
+VerifyTokenDep = Annotated[str, Security(payload_getter.verify)]
